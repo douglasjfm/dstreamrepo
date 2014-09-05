@@ -44,7 +44,7 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
     gchar *name_pad;
     const gchar *new_pad_type = NULL;
 
-    g_print ("Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
+    g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
 
     /* If our converter is already linked, we have nothing to do here */
 //    if (gst_pad_is_linked(sink_pad))
