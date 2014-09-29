@@ -235,6 +235,5 @@ int main(int argc, char *argv[])
     gst_object_unref(pipeline_a);
     gst_object_unref(pipeline_v);
     g_main_loop_unref(app_loop);
-    system("pause");
     return 0;
 }
