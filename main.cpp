@@ -44,10 +44,10 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
     gchar *name_pad;
     const gchar *new_pad_type = NULL;
 
-<<<<<<< HEAD
+
     g_print ("->handler: Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
-=======
-    g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
+
+    //g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
 
     /* If our converter is already linked, we have nothing to do here */
 //    if (gst_pad_is_linked(sink_pad))
@@ -55,7 +55,6 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
 //        g_print("  We are already linked. Ignoring.\n");
 //        goto exit;
 //    }
->>>>>>> c75543128f50ede11fa58bfaf835f008766fd494
 
 //	/* Check the new pad's type */
     if (g_str_has_prefix(name_pad,"send_rtp_src") || g_str_has_prefix(name_pad,"send_rtcp_sink"))
