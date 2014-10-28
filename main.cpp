@@ -10,41 +10,44 @@ static void make_request_pad_and_link (GstElement *makePad,const gchar *pad_temp
 
     pad = gst_element_get_request_pad (makePad, pad_template);
     name = gst_pad_get_name (pad);
-    g_print ("A new pad %s was created\n", name);
-    g_free (name);
+    //g_print ("A new pad %s was created\n", name);
     /* here, you would link the pad */
     if (linkToBefore)
     {
-        GstPad *stcpad = gst_element_get_static_pad(linkToBefore,"sink");
+        GstPad *stcpad = gst_element_get_static_pad(linkToBefore,"src");
         ret = gst_pad_link(stcpad,pad);
-        gst_object_unref(stcpad);
+        //    gst_object_unref(stcpad);
     }
     if (linkToAfter)
     {
-        GstPad *stcpad = gst_element_get_static_pad(linkToAfter,"src");
+        GstPad *stcpad = gst_element_get_static_pad(linkToAfter,"sink");
         ret = gst_pad_link(pad,stcpad);
-        gst_object_unref(stcpad);
+        //   gst_object_unref(stcpad);
     }
 
     if (ret)
-        g_print ("  Type is '%s' but link failed.\n", name);
+        g_print ("  Pad req '%s' but link failed.\n", name);
     else
-        g_print ("  Link succeeded (type '%s').\n", name);
+        g_print ("  Pad req Link succeeded (type '%s').\n", name);
 
+    g_free (name);
     /* and, after doing that, free our reference */
     //gst_object_unref (GST_OBJECT (pad));
 }
 
 static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sink)
 {
-    GstPad *sink_pad;
+    GstPad *link = NULL;
     GstPadLinkReturn ret;
     GstCaps *new_pad_caps = NULL;
     GstStructure *new_pad_struct = NULL;
     gchar *name_pad;
     const gchar *new_pad_type = NULL;
 
-    g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
+
+    g_print ("->handler: Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
+
+    //g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
 
     /* If our converter is already linked, we have nothing to do here */
 //    if (gst_pad_is_linked(sink_pad))
@@ -54,52 +57,65 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
 //    }
 
 //	/* Check the new pad's type */
-//	new_pad_caps = gst_pad_get_caps(new_pad);
-//	new_pad_struct = gst_caps_get_structure(new_pad_caps, 0);
-//	new_pad_type = gst_structure_get_name(new_pad_struct);
+    if (g_str_has_prefix(name_pad,"send_rtp_src") || g_str_has_prefix(name_pad,"send_rtcp_sink"))
+    {
+        new_pad_caps = gst_pad_get_caps(new_pad);
+        new_pad_struct = gst_caps_get_structure(new_pad_caps, 0);
+        new_pad_type = gst_structure_get_name(new_pad_struct);
+        name_pad = gst_pad_get_name(new_pad);
+    }
+    else return;
 
     /* Attempt the link */
-    name_pad = gst_pad_get_name(new_pad);
 
     if (g_str_has_prefix(name_pad,"send_rtp_src"))
     {
-        GstPad *rtpsrcpad = gst_element_get_pad(src,"send_rtp_src_0");
-        sink_pad = gst_element_get_static_pad(sink[0], NULL);
-//        g_print("akiii");
-//        sink_pad = gst_element_get_static_pad(sink[0], "sink");
-//        ret = gst_pad_link(new_pad, sink_pad);
-//        if (GST_PAD_LINK_FAILED (ret))
-//            g_print ("  Type is '%s' but link failed.\n", new_pad_type);
-//        else
-//            g_print ("  Link succeeded (type '%s').\n", new_pad_type);
+        g_print("->->send rtp src detect\n");
+        link = gst_element_get_pad(sink[0],"sink");
+
+        if (gst_pad_is_linked(link))
+        {
+            gst_object_unref(link);
+            goto exit;
+        }
+        ret = gst_pad_link(new_pad, link);
     }
-    else if (g_str_has_prefix(name_pad,"send_rtcp_src"))
+    else if (g_str_has_prefix(name_pad,"send_rtcp_sink"))
     {
-        g_print("akiii1");
-        sink_pad = gst_element_get_static_pad(sink[1], "sink");
-        GstPad *rtpsrcpad = gst_element_get_pad(src,"send_rtcp_src_0");
-        ret = gst_pad_link(new_pad, sink_pad);
-        make_request_pad_and_link(src,"recv_rtcp_sink_%d",sink[2],NULL);
-        if (GST_PAD_LINK_FAILED (ret))
-            g_print ("  Type is '%s' but link failed.\n", new_pad_type);
-        else
-            g_print ("  Link succeeded (type '%s').\n", new_pad_type);
+        g_print("->->send rtcp sink detect\n");
+        link = gst_element_get_pad(sink[2],"src");
+
+        if (gst_pad_is_linked(link))
+        {
+            gst_object_unref(link);
+            goto exit;
+        }
+        ret = gst_pad_link(link, new_pad);
     }
 
-    gst_pad_link(rtpsrcpad,sink_pad);
+    else goto exit;
+
+    if (ret!=888 && GST_PAD_LINK_FAILED (ret))
+    {
+        g_print ("->->->Type is '%s' but link failed.\n", new_pad_type);
+    }
+    else
+    {
+        g_print ("->->->Link succeeded (type '%s').\n", new_pad_type);
+    }
 
 exit:
     /* Unreference the new pad's caps, if we got them */
     if (new_pad_caps != NULL)
         gst_caps_unref(new_pad_caps);
-        /* Unreference the sink pad */
-    gst_object_unref(sink_pad);
+    if(link) gst_object_unref(link);
+    /* Unreference the sink pad */
 }
 
 int main(int argc, char *argv[])
 {
     GstElement *pipeline_v, *source_v, *sink_v, *enc_v, *conv_v;
-    GstElement *pipeline_a, *source_a, *sink_a, *sink2_a, *sink3_a, *enc_a, *conv_a;
+    GstElement *pipeline_a, *source_a, *sink_a, *sinkrtcp, *sink3_a, *enc_a, *conv_a;
 
     GMainLoop *app_loop;
 
@@ -131,7 +147,7 @@ int main(int argc, char *argv[])
     enc_v = gst_element_factory_make("theoraenc",NULL);
 
     sink_a = gst_element_factory_make("udpsink",NULL);
-    sink2_a = gst_element_factory_make("udpsink",NULL);
+    sinkrtcp = gst_element_factory_make("udpsink",NULL);
     sink_v = gst_element_factory_make("udpsink",NULL);
     sink3_a = gst_element_factory_make("udpsrc",NULL);
 
@@ -142,13 +158,13 @@ int main(int argc, char *argv[])
 
     g_object_set(sink_a,"host","192.168.1.20", "port", 12345, NULL);
     g_object_set(sink3_a, "port", 12347, NULL);
-    g_object_set(sink2_a,"host","192.168.1.20", "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
+    g_object_set(sinkrtcp,"host","192.168.1.20", "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
     g_object_set(sink_v,"host",ipdest,"port",12348,NULL);
     g_object_set(enc_v,"bitrate",400,NULL);
 
     /*Insert sinks in the GList*/
     sinkList[0] = sink_a;
-    sinkList[1] = sink2_a;
+    sinkList[1] = sinkrtcp;
     sinkList[2] = sink3_a;
 
     /* Create the empty pipeline */
@@ -169,7 +185,7 @@ int main(int argc, char *argv[])
     gst_bin_add(GST_BIN(pipeline_a), enc_a);
     gst_bin_add(GST_BIN(pipeline_a), rtpspxpay);
     gst_bin_add(GST_BIN(pipeline_a), sink_a);
-    gst_bin_add(GST_BIN(pipeline_a), sink2_a);
+    gst_bin_add(GST_BIN(pipeline_a), sinkrtcp);
     gst_bin_add(GST_BIN(pipeline_a), sink3_a);
 
     gst_bin_add(GST_BIN(pipeline_v), source_v);
@@ -198,6 +214,7 @@ int main(int argc, char *argv[])
     g_signal_connect(rtpbin, "pad-added", G_CALLBACK(pad_added_handler), sinkList);//tratar send_rtp_src tratar send_rtcp_src
 
     make_request_pad_and_link(rtpbin,"send_rtp_sink_%d",rtpspxpay,NULL);
+    make_request_pad_and_link(rtpbin,"send_rtcp_src_%d",NULL,sinkrtcp);
 
     /* Start playing */
     ret = gst_element_set_state(pipeline_a, GST_STATE_PLAYING);
