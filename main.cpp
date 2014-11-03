@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 {
     GstElement *pipeline_v, *source_v, *sink_v, *enc_v, *conv_v;
     GstElement *pipeline_a, *source_a, *sink_a, *sinkrtcp, *sink3_a, *enc_a, *conv_a;
-
+    char destIP[20];
     GMainLoop *app_loop;
 
     GstElement *sinkList[3];
@@ -133,6 +133,12 @@ int main(int argc, char *argv[])
 
     gchar *ipdest = (gchar*) argv[2];
     char *mode = argv[1];
+    
+    if (argc > 1)
+    {
+        strcpy(destIP,argv[1]);
+    }
+    else strcpy(destIP,"192.168.1.20");
 
     //GMain Loop
     app_loop = g_main_loop_new (NULL, FALSE);
@@ -160,10 +166,10 @@ int main(int argc, char *argv[])
 
     //audioresamp = gst_element_factory_make = ("audioresample",NULL);
 
-    g_object_set(sink_a,"host","192.168.1.20", "port", 12345, NULL);
+    g_object_set(sink_a,"host",destIP, "port", 12345, NULL);
     g_object_set(sink3_a, "port", 12347, NULL);
-    g_object_set(sinkrtcp,"host","192.168.1.20", "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
-    g_object_set(sink_v,"host",ipdest,"port",12348,NULL);
+    g_object_set(sinkrtcp,"host",destIP, "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
+    g_object_set(sink_v,"host",destIP,"port",12348,NULL);
     g_object_set(enc_v,"bitrate",400,NULL);
 
     /*Insert sinks in the GList*/
