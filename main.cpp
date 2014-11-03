@@ -3,7 +3,7 @@
 #include <string.h>
 /*
 
-	@author Douglas Medeiros <douglasjfm at gmail dot com>
+	@author Douglas Medeiros [<douglasjfm at gmail dot com>]
 
 */
 static void make_request_pad_and_link (GstElement *makePad,const gchar *pad_template, GstElement *linkToBefore, GstElement *linkToAfter)
