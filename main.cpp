@@ -131,14 +131,11 @@ int main(int argc, char *argv[])
     GstMessage *msg;
     GstStateChangeReturn ret;
 
-    gchar *ipdest = (gchar*) argv[2];
+    gchar *ipdest;
     char *mode = argv[1];
-    
-    if (argc > 1)
-    {
-        strcpy(destIP,argv[1]);
-    }
-    else strcpy(destIP,"192.168.1.20");
+
+    if (argc < 2) ipdest = "192.168.1.20";
+    else ipdest = (gchar*) argv[2];
 
     //GMain Loop
     app_loop = g_main_loop_new (NULL, FALSE);
@@ -166,7 +163,9 @@ int main(int argc, char *argv[])
 
     //audioresamp = gst_element_factory_make = ("audioresample",NULL);
 
-    g_object_set(sink_a,"host",destIP, "port", 12345, NULL);
+
+    g_object_set(sink_a,"host",ipdest, "port", 12345, NULL);
+
     g_object_set(sink3_a, "port", 12347, NULL);
     g_object_set(sinkrtcp,"host",destIP, "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
     g_object_set(sink_v,"host",destIP,"port",12348,NULL);
@@ -227,7 +226,7 @@ int main(int argc, char *argv[])
     make_request_pad_and_link(rtpbin,"send_rtcp_src_%d",NULL,sinkrtcp);
 
     /* Start playing */
-    ret = gst_element_set_state(pipeline_a, GST_STATE_PLAYING);
+    //ret = gst_element_set_state(pipeline_a, GST_STATE_PLAYING);
 
     ret = gst_element_set_state(pipeline_v, GST_STATE_PLAYING);
 
@@ -244,7 +243,7 @@ int main(int argc, char *argv[])
     g_print("playing");
 
     /* Wait until error or EOS */
-    bus = gst_element_get_bus(pipeline_a);
+    bus = gst_element_get_bus(pipeline_v);
     msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, (GstMessageType)(GST_MESSAGE_ERROR | GST_MESSAGE_EOS));
 
 
