@@ -134,6 +134,12 @@ int main(int argc, char *argv[])
     gchar *ipdest;
     char *mode = argv[1];
 
+    if (argc > 1)
+    {
+        strcpy(destIP,argv[1]);
+    }
+    else strcpy(destIP,"192.168.1.20");
+
     if (argc < 2) ipdest = "192.168.1.20";
     else ipdest = (gchar*) argv[2];
 
