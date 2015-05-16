@@ -1,11 +1,11 @@
 #include <gst/gst.h>
 #include <stdlib.h>
 #include <string.h>
+
 /*
-
 	@author Douglas Medeiros [<douglasjfm at gmail dot com>]
-
 */
+
 static void make_request_pad_and_link (GstElement *makePad,const gchar *pad_template, GstElement *linkToBefore, GstElement *linkToAfter)
 {
     GstPad * pad;
@@ -45,7 +45,7 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
     GstPadLinkReturn ret;
     GstCaps *new_pad_caps = NULL;
     GstStructure *new_pad_struct = NULL;
-    gchar *name_pad;
+    gchar *name_pad = NULL;
     const gchar *new_pad_type = NULL;
 
 
@@ -131,8 +131,7 @@ int main(int argc, char *argv[])
     GstMessage *msg;
     GstStateChangeReturn ret;
 
-    gchar *ipdest;
-    char *mode = argv[1];
+    gchar ipdest[20];
 
     if (argc > 1)
     {
@@ -140,8 +139,8 @@ int main(int argc, char *argv[])
     }
     else strcpy(destIP,"192.168.1.20");
 
-    if (argc < 2) ipdest = "192.168.1.20";
-    else ipdest = (gchar*) argv[2];
+    if (argc < 2) strcpy(ipdest,"192.168.1.20");
+    else strcpy(ipdest,argv[2]);
 
     //GMain Loop
     app_loop = g_main_loop_new (NULL, FALSE);
