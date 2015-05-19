@@ -31,7 +31,14 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="/usr/include/gstreamer-0.10" />
+			<Add directory="/usr/include/glib-2.0" />
+			<Add directory="/usr/include/libxml2" />
+			<Add directory="/usr/lib/i386-linux-gnu/glib-2.0/include" />
 		</Compiler>
+		<Linker>
+			<Add option="`pkg-config --cflags --libs gstreamer-0.10`" />
+		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
