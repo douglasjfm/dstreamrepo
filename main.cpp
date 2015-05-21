@@ -45,11 +45,11 @@ static void pad_added_handler(GstElement *src, GstPad *new_pad, GstElement **sin
     GstPadLinkReturn ret;
     GstCaps *new_pad_caps = NULL;
     GstStructure *new_pad_struct = NULL;
-    gchar *name_pad = NULL;
+    gchar *name_pad = GST_PAD_NAME(new_pad);
     const gchar *new_pad_type = NULL;
 
 
-    g_print ("->handler: Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
+    g_print ("-------->handler: Received new pad '%s' from '%s':\n", name_pad, GST_ELEMENT_NAME (src));
 
     //g_print ("->Received new pad '%s' from '%s':\n", GST_PAD_NAME (new_pad), GST_ELEMENT_NAME (src));
 
@@ -120,8 +120,14 @@ int main(int argc, char *argv[])
 {
     GstElement *pipeline_v, *source_v, *sink_v, *enc_v, *conv_v;
     GstElement *pipeline_a, *source_a, *sink_a, *sinkrtcp, *sink3_a, *enc_a, *conv_a;
-    char destIP[20];
     GMainLoop *app_loop;
+
+    GstCaps *caps;
+
+    caps = gst_caps_new_simple ("video/x-raw-yuv",
+                                "width", G_TYPE_INT, 640,
+                                "height", G_TYPE_INT, 480,
+                                NULL);
 
     GstElement *sinkList[3];
     //GstElement *audioresamp;
@@ -131,13 +137,15 @@ int main(int argc, char *argv[])
     GstMessage *msg;
     GstStateChangeReturn ret;
 
+    gboolean link_ok;
+
     gchar ipdest[20];
 
     if (argc > 1)
     {
-        strcpy(destIP,argv[1]);
+        strcpy(ipdest,argv[1]);
     }
-    else strcpy(destIP,"192.168.1.20");
+    else strcpy(ipdest,"192.168.1.20");
 
     if (argc < 2) strcpy(ipdest,"192.168.1.20");
     else strcpy(ipdest,argv[2]);
@@ -166,14 +174,11 @@ int main(int argc, char *argv[])
     rtpspxpay = gst_element_factory_make("rtpspeexpay",NULL);
     rtpbin = gst_element_factory_make("gstrtpbin",NULL);
 
-    //audioresamp = gst_element_factory_make = ("audioresample",NULL);
+    g_object_set(sink_a,"host",ipdest, "port", 5002, NULL);
 
-
-    g_object_set(sink_a,"host",ipdest, "port", 12345, NULL);
-
-    g_object_set(sink3_a, "port", 12347, NULL);
-    g_object_set(sinkrtcp,"host",destIP, "port", 12346,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
-    g_object_set(sink_v,"host",destIP,"port",12348,NULL);
+    g_object_set(sink3_a, "port", 5007, NULL);
+    g_object_set(sinkrtcp,"host",ipdest, "port", 5003,"async",(gboolean) FALSE,"sync",(gboolean)FALSE, NULL);
+    g_object_set(sink_v,"host",ipdest,"port",12348,NULL);
     g_object_set(enc_v,"bitrate",400,NULL);
 
     /*Insert sinks in the GList*/
@@ -215,12 +220,20 @@ int main(int argc, char *argv[])
         system("pause");
         return -1;
     }
-    if (gst_element_link_many(source_v, conv_v, enc_v, sink_v, NULL) != TRUE)
+
+    if (gst_element_link_filtered(source_v,conv_v, caps)!= TRUE)
+    {
+        g_printerr("Elements Cam and Converter could not be linked.\n");
+        gst_object_unref(pipeline_v);
+        gst_object_unref(pipeline_a);
+        return -1;
+    }
+
+    if (gst_element_link_many(conv_v, enc_v, sink_v, NULL) != TRUE)
     {
         g_printerr("Elements video could not be linked.\n");
         gst_object_unref(pipeline_v);
         gst_object_unref(pipeline_a);
-        system("pause");
         return -1;
     }
 
@@ -231,9 +244,9 @@ int main(int argc, char *argv[])
     make_request_pad_and_link(rtpbin,"send_rtcp_src_%d",NULL,sinkrtcp);
 
     /* Start playing */
-    //ret = gst_element_set_state(pipeline_a, GST_STATE_PLAYING);
+    ret = gst_element_set_state(pipeline_a, GST_STATE_PLAYING);
 
-    ret = gst_element_set_state(pipeline_v, GST_STATE_PLAYING);
+    //ret = gst_element_set_state(pipeline_v, GST_STATE_PLAYING);
 
     if (ret == GST_STATE_CHANGE_FAILURE)
     {
@@ -241,7 +254,6 @@ int main(int argc, char *argv[])
         gst_object_unref(pipeline_a);
         gst_object_unref(pipeline_v);
 
-        system("pause");
         return -1;
     }
 
