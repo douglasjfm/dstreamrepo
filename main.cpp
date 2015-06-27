@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     source_a = gst_element_factory_make("alsasrc",NULL);
 
     conv_a = gst_element_factory_make("audioconvert",NULL);
-    conv_v = gst_element_factory_make("ffmpegcolorspace",NULL);
+    conv_v = gst_element_factory_make("videoconvert",NULL);
 
     enc_a = gst_element_factory_make("speexenc",NULL);
     enc_v = gst_element_factory_make("theoraenc",NULL);
